@@ -29,7 +29,10 @@ const PORT = process.env.PORT || 5000;
 const MONGO_URI = process.env.MONGO_URI;
 
 app.use(cors({
-  origin: 'http://localhost:5173',
+  origin: [
+    'http://localhost:5173',
+    'https://hotel-frontend-navy-tau.vercel.app'
+  ],
   credentials: true,
 }));
 app.use(express.json());
