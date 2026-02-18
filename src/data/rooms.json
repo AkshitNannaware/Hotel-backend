@@ -1,0 +1,63 @@
+[
+  {
+    "id": "1",
+    "name": "Deluxe King Suite",
+    "type": "Suite",
+    "price": 350,
+    "images": [
+      "https://images.unsplash.com/photo-1759223198981-661cadbbff36?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxsdXh1cnklMjBob3RlbCUyMGJlZHJvb20lMjBzdWl0ZSUyMGx1eHVyeXxlbnwxfHx8fDE3NzA3MDY1NTh8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "https://images.unsplash.com/photo-1655292912612-bb5b1bda9355?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxob3RlbCUyMHJvb20lMjBtb2Rlcm4lMjBjbGVhbnxlbnwxfHx8fDE3NzA2MjA0ODZ8MA&ixlib=rb-4.1.0&q=80&w=1080"
+    ],
+    "description": "Luxurious suite with king-size bed, separate living area, and stunning city views. Perfect for couples or business travelers seeking comfort and elegance.",
+    "amenities": ["WiFi", "AC", "Pool Access", "Room Service", "Minibar", "TV", "Workspace"],
+    "maxGuests": 2,
+    "size": 45,
+    "available": true
+  },
+  {
+    "id": "2",
+    "name": "Premium Double Room",
+    "type": "Double",
+    "price": 220,
+    "images": [
+      "https://images.unsplash.com/photo-1655292912612-bb5b1bda9355?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxob3RlbCUyMHJvb20lMjBtb2Rlcm4lMjBjbGVhbnxlbnwxfHx8fDE3NzA2MjA0ODZ8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "https://images.unsplash.com/photo-1759223198981-661cadbbff36?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxob3RlbCUyMGJlZHJvb20lMjBzdWl0ZSUyMGx1eHVyeXxlbnwxfHx8fDE3NzA3MDY1NTh8MA&ixlib=rb-4.1.0&q=80&w=1080"
+    ],
+    "description": "Modern double room with contemporary design and all essential amenities. Great value for leisure travelers.",
+    "amenities": ["WiFi", "AC", "TV", "Room Service", "Parking"],
+    "maxGuests": 2,
+    "size": 30,
+    "available": true
+  },
+  {
+    "id": "3",
+    "name": "Executive Single Room",
+    "type": "Single",
+    "price": 150,
+    "images": [
+      "https://images.unsplash.com/photo-1655292912612-bb5b1bda9355?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxob3RlbCUyMHJvb20lMjBtb2Rlcm4lMjBjbGVhbnxlbnwxfHx8fDE3NzA2MjA0ODZ8MA&ixlib=rb-4.1.0&q=80&w=1080"
+    ],
+    "description": "Compact yet comfortable single room, ideal for solo travelers and short business stays.",
+    "amenities": ["WiFi", "AC", "TV", "Workspace"],
+    "maxGuests": 1,
+    "size": 20,
+    "available": true
+  },
+  {
+    "id": "4",
+    "name": "Royal Presidential Suite",
+    "type": "Deluxe",
+    "price": 850,
+    "images": [
+      "https://images.unsplash.com/photo-1759223198981-661cadbbff36?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxob3RlbCUyMGJlZHJvb20lMjBzdWl0ZSUyMGx1eHVyeXxlbnwxfHx8fDE3NzA3MDY1NTh8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "https://images.unsplash.com/photo-1655292912612-bb5b1bda9355?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxob3RlbCUyMHJvb20lMjBtb2Rlcm4lMjBjbGVhbnxlbnwxfHx8fDE3NzA2MjA0ODZ8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "https://images.unsplash.com/photo-1729717949948-56b52db111dd?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxob3RlbCUyMHBvb2wlMjByZXNvcnR8ZW58MXx8fHwxNzcwNjE3NTY4fDA&ixlib=rb-4.1.0&q=80&w=1080"
+    ],
+    "description": "Our most luxurious accommodation featuring panoramic views, private terrace, jacuzzi, and dedicated butler service.",
+    "amenities": ["WiFi", "AC", "Pool Access", "Room Service", "Minibar", "TV", "Workspace", "Jacuzzi", "Butler Service", "Parking"],
+    "maxGuests": 4,
+    "size": 100,
+    "available": true
+  }
+]
+
