@@ -9,7 +9,8 @@ mongoose.set('bufferCommands', false);
 
 const authRoutes = require('./routes/auth');
 const roomRoutes = require('./routes/admin/rooms');
-const serviceRoutes = require('./routes/admin/services');
+const serviceRoutes = require('./routes/services');
+const adminServiceRoutes = require('./routes/admin/services');
 const offerRoutes = require('./routes/offers');
 const adminOfferRoutes = require('./routes/admin/offers');
 const bookingRoutes = require('./routes/bookings');
