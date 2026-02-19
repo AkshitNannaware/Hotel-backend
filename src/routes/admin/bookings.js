@@ -194,16 +194,19 @@ router.patch('/:id/status', async (req, res, next) => {
       return res.status(400).json({ message: 'Invalid status' });
     }
 
-    const booking = await Booking.findByIdAndUpdate(
-      req.params.id,
-      { status },
-      { new: true, runValidators: true }
-    );
-
+    const booking = await Booking.findById(req.params.id);
     if (!booking) {
       return res.status(404).json({ message: 'Booking not found' });
     }
-
+    // Prevent status change after approval or rejection
+    if (booking.status === 'confirmed' && status === 'cancelled') {
+      return res.status(400).json({ message: 'Booking is already Confirmed and cannot be rejected.' });
+    }
+    if (booking.status === 'cancelled' && status === 'confirmed') {
+      return res.status(400).json({ message: 'Booking is already Cancelled and cannot be approved.' });
+    }
+    booking.status = status;
+    await booking.save();
     res.json(booking);
   } catch (err) {
     next(err);
