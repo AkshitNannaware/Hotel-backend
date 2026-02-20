@@ -38,6 +38,7 @@ const adminServiceBookingRoutes = require('./routes/admin/serviceBookings');
 const paymentRoutes = require('./routes/payments');
 const newsletterRoutes = require('./routes/newsletter');
 const adminNewsletterRoutes = require('./routes/admin/newsletters');
+const notificationRoutes = require('./routes/notifications');
 const User = require('./models/User');
 
 const app = express();
@@ -47,8 +48,8 @@ const MONGO_URI = process.env.MONGO_URI;
 app.use(cors({
   origin: [
     'http://localhost:5173',
-    'https://hotel-frontend-navy-tau.vercel.app',
-    'https://hotel-frontend-orcin.vercel.app' // <-- add this
+    // 'https://hotel-frontend-navy-tau.vercel.app',
+    // 'https://hotel-frontend-orcin.vercel.app' // <-- add this
   ],
   credentials: true,
 }));
@@ -82,6 +83,7 @@ app.use('/api/admin/service-bookings', adminServiceBookingRoutes);
 app.use('/api/payments', paymentRoutes);
 app.use('/api/newsletter', newsletterRoutes);
 app.use('/api/admin/newsletters', adminNewsletterRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 // Global error handler
 app.use((err, req, res, next) => {
