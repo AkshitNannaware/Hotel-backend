@@ -1,3 +1,38 @@
+const PDFDocument = require('pdfkit');
+// GET /api/service-bookings/:id/invoice - Download invoice PDF for a service booking
+router.get('/:id/invoice', async (req, res, next) => {
+    try {
+        const booking = await ServiceBooking.findById(req.params.id).lean();
+        if (!booking) return res.status(404).json({ message: 'Service booking not found' });
+        if (booking.userId !== req.user.id && req.user.role !== 'admin') {
+            return res.status(403).json({ message: 'Access denied' });
+        }
+
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', `attachment; filename=invoice-service-${booking._id}.pdf`);
+        const doc = new PDFDocument();
+        doc.pipe(res);
+        doc.fontSize(20).text('Hotel Service Invoice', { align: 'center' });
+        doc.moveDown();
+        doc.fontSize(12).text(`Invoice ID: ${booking._id}`);
+        doc.text(`Guest Name: ${booking.guestName}`);
+        doc.text(`Guest Email: ${booking.guestEmail}`);
+        doc.text(`Guest Phone: ${booking.guestPhone}`);
+        doc.text(`Service: ${booking.serviceName}`);
+        doc.text(`Category: ${booking.category}`);
+        doc.text(`Date: ${new Date(booking.date).toLocaleDateString()}`);
+        doc.text(`Time: ${booking.time}`);
+        doc.text(`Guests: ${booking.guests}`);
+        doc.text(`Status: ${booking.status}`);
+        doc.text(`Payment Status: ${booking.paymentStatus || 'paid'}`);
+        doc.moveDown();
+        doc.text(`Price Range: ${booking.priceRange}`);
+        if (booking.totalPrice) doc.font('Helvetica-Bold').text(`Total: ₹${booking.totalPrice}`);
+        doc.end();
+    } catch (err) {
+        next(err);
+    }
+});
 // const express = require('express');
 // const router = express.Router();
 // const ServiceBooking = require('../models/ServiceBooking');

@@ -3,6 +3,43 @@ const path = require('path');
 const fs = require('fs');
 const multer = require('multer');
 const Booking = require('../models/Booking');
+const PDFDocument = require('pdfkit');
+// GET /api/bookings/:id/invoice - Download invoice PDF for a booking
+router.get('/:id/invoice', async (req, res, next) => {
+  try {
+    const booking = await Booking.findById(req.params.id).lean();
+    if (!booking) return res.status(404).json({ message: 'Booking not found' });
+    if (booking.userId !== req.user.id && req.user.role !== 'admin') {
+      return res.status(403).json({ message: 'Access denied' });
+    }
+
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename=invoice-room-${booking._id}.pdf`);
+    const doc = new PDFDocument();
+    doc.pipe(res);
+    doc.fontSize(20).text('Hotel Booking Invoice', { align: 'center' });
+    doc.moveDown();
+    doc.fontSize(12).text(`Invoice ID: ${booking._id}`);
+    doc.text(`Guest Name: ${booking.guestName}`);
+    doc.text(`Guest Email: ${booking.guestEmail}`);
+    doc.text(`Guest Phone: ${booking.guestPhone}`);
+    doc.text(`Room ID: ${booking.roomId}`);
+    doc.text(`Check-In: ${new Date(booking.checkIn).toLocaleDateString()}`);
+    doc.text(`Check-Out: ${new Date(booking.checkOut).toLocaleDateString()}`);
+    doc.text(`Guests: ${booking.guests}`);
+    doc.text(`Rooms: ${booking.rooms}`);
+    doc.text(`Status: ${booking.status}`);
+    doc.text(`Payment Status: ${booking.paymentStatus}`);
+    doc.moveDown();
+    doc.text(`Room Price: ₹${booking.roomPrice}`);
+    doc.text(`Taxes: ₹${booking.taxes}`);
+    doc.text(`Service Charges: ₹${booking.serviceCharges}`);
+    doc.font('Helvetica-Bold').text(`Total: ₹${booking.totalPrice}`);
+    doc.end();
+  } catch (err) {
+    next(err);
+  }
+});
 const { requireDb } = require('../middleware/requireDb');
 const { requireAuth } = require('../middleware/auth');
 
@@ -161,6 +198,14 @@ router.post('/', async (req, res, next) => {
     res.status(201).json(booking);
   } catch (err) {
     next(err);
+      // Create notification for booking
+      const Notification = require('../models/Notification');
+      await Notification.create({
+        userId: req.user.id,
+        title: 'Booking Confirmed',
+        message: `Your booking for room ${roomId} is confirmed from ${checkInDate.toDateString()} to ${checkOutDate.toDateString()}.`,
+        role: 'user',
+      });
   }
 });
 
@@ -217,6 +262,27 @@ router.patch('/:id/status', async (req, res, next) => {
     booking.status = status;
     booking.cancelledAt = status === 'cancelled' ? new Date() : undefined;
     await booking.save();
+      // Create notification for status change
+      const Notification = require('../models/Notification');
+      let notifTitle = '', notifMsg = '';
+      if (status === 'cancelled') {
+        notifTitle = 'Booking Cancelled';
+        notifMsg = `Your booking for room ${booking.roomId} has been cancelled.`;
+      } else if (status === 'checked-in') {
+        notifTitle = 'Checked In';
+        notifMsg = `You have checked in to room ${booking.roomId}.`;
+      } else if (status === 'checked-out') {
+        notifTitle = 'Checked Out';
+        notifMsg = `You have checked out from room ${booking.roomId}.`;
+      }
+      if (notifTitle) {
+        await Notification.create({
+          userId: booking.userId,
+          title: notifTitle,
+          message: notifMsg,
+          role: 'user',
+        });
+      }
     res.json(booking);
   } catch (err) {
     next(err);
@@ -278,6 +344,24 @@ router.patch('/:id/payment-status', async (req, res, next) => {
 
     booking.paymentStatus = paymentStatus;
     await booking.save();
+      // Create notification for payment status
+      const Notification = require('../models/Notification');
+      let notifTitle = '', notifMsg = '';
+      if (paymentStatus === 'paid') {
+        notifTitle = 'Payment Successful';
+        notifMsg = `Payment for booking ${booking._id} was successful.`;
+      } else if (paymentStatus === 'failed') {
+        notifTitle = 'Payment Failed';
+        notifMsg = `Payment for booking ${booking._id} failed.`;
+      }
+      if (notifTitle) {
+        await Notification.create({
+          userId: booking.userId,
+          title: notifTitle,
+          message: notifMsg,
+          role: 'user',
+        });
+      }
     res.json(booking);
   } catch (err) {
     next(err);
