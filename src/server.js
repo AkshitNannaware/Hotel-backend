@@ -1,3 +1,18 @@
+const DeletedItem = require('./models/DeletedItem');
+// Scheduled job to permanently delete items from dustbin after 48 hours
+setInterval(async () => {
+  try {
+    const now = new Date();
+    const expiredItems = await DeletedItem.find({ expiresAt: { $lte: now } });
+    for (const item of expiredItems) {
+      // Optionally: log or backup before permanent delete
+      await DeletedItem.deleteOne({ _id: item._id });
+      console.log(`Dustbin: Permanently deleted ${item.itemType} ${item.itemId}`);
+    }
+  } catch (err) {
+    console.error('Dustbin cleanup error:', err);
+  }
+}, 60 * 60 * 1000); // Run every hour
 const express = require('express');
 const path = require('path');
 const cors = require('cors');
