@@ -5,6 +5,7 @@ const multer = require('multer');
 const Booking = require('../models/Booking');
 const { requireDb } = require('../middleware/requireDb');
 const { requireAuth } = require('../middleware/auth');
+const PDFDocument = require('pdfkit');
 
 const router = express.Router();
 
@@ -75,7 +76,43 @@ const findNextAvailableRoomDates = async (roomId, checkInDate, checkOutDate) => 
   return { checkInDate: nextCheckIn, checkOutDate: nextCheckOut };
 };
 
-// Shape is based on BookingContext Booking interface
+// GET /api/bookings/:id/invoice - Download invoice PDF for a booking
+router.get('/:id/invoice', async (req, res, next) => {
+  try {
+    const booking = await Booking.findById(req.params.id).lean();
+    if (!booking) return res.status(404).json({ message: 'Booking not found' });
+    if (booking.userId !== req.user.id && req.user.role !== 'admin') {
+      return res.status(403).json({ message: 'Access denied' });
+    }
+
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename=invoice-room-${booking._id}.pdf`);
+    const doc = new PDFDocument();
+    doc.pipe(res);
+    doc.fontSize(20).text('Hotel Booking Invoice', { align: 'center' });
+    doc.moveDown();
+    doc.fontSize(12).text(`Invoice ID: ${booking._id}`);
+    doc.text(`Guest Name: ${booking.guestName}`);
+    doc.text(`Guest Email: ${booking.guestEmail}`);
+    doc.text(`Guest Phone: ${booking.guestPhone}`);
+    doc.text(`Room ID: ${booking.roomId}`);
+    doc.text(`Check-In: ${new Date(booking.checkIn).toLocaleDateString()}`);
+    doc.text(`Check-Out: ${new Date(booking.checkOut).toLocaleDateString()}`);
+    doc.text(`Guests: ${booking.guests}`);
+    doc.text(`Rooms: ${booking.rooms}`);
+    doc.text(`Status: ${booking.status}`);
+    doc.text(`Payment Status: ${booking.paymentStatus}`);
+    doc.moveDown();
+    doc.text(`Room Price: ₹${booking.roomPrice}`);
+    doc.text(`Taxes: ₹${booking.taxes}`);
+    doc.text(`Service Charges: ₹${booking.serviceCharges}`);
+    doc.font('Helvetica-Bold').text(`Total: ₹${booking.totalPrice}`);
+    doc.end();
+  } catch (err) {
+    next(err);
+  }
+});
+
 // POST /api/bookings
 router.post('/', async (req, res, next) => {
   const {
