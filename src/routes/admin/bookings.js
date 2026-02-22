@@ -245,8 +245,13 @@ router.patch('/:id/id-proof', requireAuth, requireAdmin, upload.single('idProof'
 // GET /api/admin/bookings - Get all bookings (admin only)
 router.get('/', requireAuth, requireAdmin, async (req, res, next) => {
   try {
+    // Always include guestPhone in the response
     const bookings = await Booking.find().lean();
-    res.json(bookings);
+    const bookingsWithPhone = bookings.map(b => ({
+      ...b,
+      guestPhone: b.guestPhone || '',
+    }));
+    res.json(bookingsWithPhone);
   } catch (err) {
     next(err);
   }
