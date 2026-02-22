@@ -1,3 +1,5 @@
+require('dotenv').config();
+console.log('Loaded JWT_SECRET:', process.env.JWT_SECRET);
 const DeletedItem = require('./models/DeletedItem');
 // Scheduled job to permanently delete items from dustbin after 48 hours
 setInterval(async () => {
@@ -48,8 +50,8 @@ const MONGO_URI = process.env.MONGO_URI;
 app.use(cors({
   origin: [
     'http://localhost:5173',
-    'https://hotel-frontend-navy-tau.vercel.app',
-    'https://hotel-frontend-orcin.vercel.app' // <-- add this
+    // 'https://hotel-frontend-navy-tau.vercel.app',
+    // 'https://hotel-frontend-orcin.vercel.app' // <-- add this
   ],
   credentials: true,
 }));
@@ -102,7 +104,6 @@ async function startServer() {
   try {
     await mongoose.connect(MONGO_URI);
     console.log('MongoDB connected');
-    await ensureAdminUser();
   } catch (err) {
     console.error('MongoDB connection failed.', err);
     process.exit(1);
@@ -113,20 +114,6 @@ async function startServer() {
   });
 }
 
-async function ensureAdminUser() {
-  const adminEmail = 'admin@hotel.com';
-  const existing = await User.findOne({ email: adminEmail });
-  if (!existing) {
-    const passwordHash = await bcrypt.hash('admin', 10);
-    await User.create({
-      name: 'Admin User',
-      email: adminEmail,
-      phone: '+1234567890',
-      role: 'admin',
-      passwordHash,
-    });
-  }
-}
 
 
 startServer().catch((err) => {

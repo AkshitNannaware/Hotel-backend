@@ -8,6 +8,11 @@ const userSchema = new mongoose.Schema(
     role: { type: String, enum: ['user', 'admin'], default: 'user' },
     passwordHash: { type: String, required: true },
     twoFactorEnabled: { type: Boolean, default: false },
+    logoUrl: { type: String, trim: true },
+    facebook: { type: String, trim: true },
+    instagram: { type: String, trim: true },
+    youtube: { type: String, trim: true },
+    twitter: { type: String, trim: true },
   },
   { timestamps: true }
 );

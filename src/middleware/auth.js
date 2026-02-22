@@ -12,9 +12,13 @@ function requireAuth(req, res, next) {
 
   try {
     const payload = jwt.verify(token, JWT_SECRET);
+    console.log('Decoded JWT payload:', payload);
     req.user = payload;
+    // Always set req.user.id for compatibility (id, _id, userId)
+    req.user.id = payload.id || payload._id || payload.userId;
     return next();
   } catch (err) {
+    console.error('JWT verification failed:', err.message);
     return res.status(401).json({ message: 'Invalid token' });
   }
 }
