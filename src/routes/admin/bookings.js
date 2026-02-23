@@ -187,11 +187,19 @@ router.get('/:id', async (req, res, next) => {
 // PATCH /api/bookings/:id/status
 router.patch('/:id/status', async (req, res, next) => {
   try {
-    const { status } = req.body;
+    const { status, paymentStatus, paymentMethod } = req.body;
     const allowedStatuses = ['pending', 'confirmed', 'checked-in', 'checked-out', 'cancelled'];
+    const allowedPaymentStatuses = ['pending', 'paid', 'failed'];
+    const allowedPaymentMethods = ['cash', 'online', ''];
 
     if (!allowedStatuses.includes(status)) {
       return res.status(400).json({ message: 'Invalid status' });
+    }
+    if (paymentStatus && !allowedPaymentStatuses.includes(paymentStatus)) {
+      return res.status(400).json({ message: 'Invalid payment status' });
+    }
+    if (paymentMethod && !allowedPaymentMethods.includes(paymentMethod)) {
+      return res.status(400).json({ message: 'Invalid payment method' });
     }
 
     const booking = await Booking.findById(req.params.id);
@@ -206,6 +214,8 @@ router.patch('/:id/status', async (req, res, next) => {
       return res.status(400).json({ message: 'Booking is already Cancelled and cannot be approved.' });
     }
     booking.status = status;
+    if (paymentStatus) booking.paymentStatus = paymentStatus;
+    if (paymentMethod) booking.paymentMethod = paymentMethod;
     await booking.save();
     res.json(booking.toObject());
   } catch (err) {

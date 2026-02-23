@@ -8,6 +8,38 @@ const { requireAuth } = require('../middleware/auth');
 // Apply middleware to all routes - all require authentication
 router.use(requireDb, requireAuth);
 
+// PATCH /api/service-bookings/:id/payment-status - Update payment status/method for a service booking
+router.patch('/:id/payment-status', async (req, res, next) => {
+    try {
+        const { id } = req.params;
+        const { paymentStatus, paymentMethod } = req.body;
+        const allowedStatuses = ['pending', 'paid', 'failed'];
+        const allowedMethods = ['cash', 'online', ''];
+
+        if (!paymentStatus || !allowedStatuses.includes(paymentStatus)) {
+            return res.status(400).json({ message: 'Invalid payment status' });
+        }
+        if (paymentMethod && !allowedMethods.includes(paymentMethod)) {
+            return res.status(400).json({ message: 'Invalid payment method' });
+        }
+
+        const booking = await ServiceBooking.findById(id);
+        if (!booking) {
+            return res.status(404).json({ message: 'Service booking not found' });
+        }
+        // Only the user who booked or admin can update payment
+        if (booking.userId !== req.user?.id && req.user?.role !== 'admin') {
+            return res.status(403).json({ message: 'Access denied' });
+        }
+        booking.paymentStatus = paymentStatus;
+        if (paymentMethod) booking.paymentMethod = paymentMethod;
+        await booking.save();
+        res.json(booking);
+    } catch (err) {
+        next(err);
+    }
+});
+
 // POST /api/service-bookings - Create a new booking
 router.post('/', async (req, res, next) => {
     try {

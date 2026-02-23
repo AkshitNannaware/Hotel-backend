@@ -25,6 +25,11 @@ const bookingSchema = new mongoose.Schema(
       enum: ['pending', 'paid', 'failed'],
       default: 'pending',
     },
+    paymentMethod: {
+      type: String,
+      enum: ['cash', 'online', ''],
+      default: '',
+    },
     idVerified: {
       type: String,
       enum: ['pending', 'approved', 'rejected'],

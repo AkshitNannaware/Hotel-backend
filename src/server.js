@@ -51,7 +51,7 @@ app.use(cors({
   origin: [
     'http://localhost:5173',
     'https://hotel-frontend-navy-tau.vercel.app',
-    'https://hotel-frontend-orcin.vercel.app' // <-- add this
+    'https://hotel-frontend-orcin.vercel.app'
   ],
   credentials: true,
 }));

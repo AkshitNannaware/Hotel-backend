@@ -256,7 +256,8 @@ router.patch('/:id/status', async (req, res, next) => {
       return res.status(404).json({ message: 'Booking not found' });
     }
 
-    if (booking.userId !== req.user.id) {
+    // Allow booking owner or admin
+    if (booking.userId !== req.user.id && req.user.role !== 'admin') {
       return res.status(403).json({ message: 'Access denied' });
     }
 
@@ -309,11 +310,15 @@ router.patch('/:id/id-proof', upload.single('idProof'), async (req, res, next) =
 // PATCH /api/bookings/:id/payment-status
 router.patch('/:id/payment-status', async (req, res, next) => {
   try {
-    const { paymentStatus } = req.body;
+    const { paymentStatus, paymentMethod } = req.body;
     const allowedStatuses = ['pending', 'paid', 'failed'];
+    const allowedMethods = ['cash', 'online', ''];
 
     if (!allowedStatuses.includes(paymentStatus)) {
       return res.status(400).json({ message: 'Invalid payment status' });
+    }
+    if (paymentMethod && !allowedMethods.includes(paymentMethod)) {
+      return res.status(400).json({ message: 'Invalid payment method' });
     }
 
     const booking = await Booking.findById(req.params.id);
@@ -327,6 +332,7 @@ router.patch('/:id/payment-status', async (req, res, next) => {
     }
 
     booking.paymentStatus = paymentStatus;
+    if (paymentMethod) booking.paymentMethod = paymentMethod;
     await booking.save();
     res.json(booking);
   } catch (err) {

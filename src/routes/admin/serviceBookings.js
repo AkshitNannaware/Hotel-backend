@@ -34,21 +34,26 @@ const getDayWindow = (value) => {
 router.patch('/:id/status', async (req, res, next) => {
     try {
         const { id } = req.params;
-        const { status } = req.body;
+        const { status, paymentStatus } = req.body;
         const allowedStatuses = ['pending', 'confirmed', 'cancelled'];
-        
+        const allowedPaymentStatuses = ['pending', 'paid', 'failed'];
+
         if (!allowedStatuses.includes(status)) {
             return res.status(400).json({ message: 'Invalid status value' });
         }
-        
+        if (paymentStatus && !allowedPaymentStatuses.includes(paymentStatus)) {
+            return res.status(400).json({ message: 'Invalid payment status value' });
+        }
+
         const booking = await ServiceBooking.findById(id);
         if (!booking) {
             return res.status(404).json({ message: 'Service booking not found' });
         }
-        
+
         booking.status = status;
+        if (paymentStatus) booking.paymentStatus = paymentStatus;
         await booking.save();
-        
+
         // Return the full booking object for consistency
         const updatedBooking = await ServiceBooking.findById(id).lean();
         res.json(updatedBooking);
