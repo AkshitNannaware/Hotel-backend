@@ -50,7 +50,7 @@ const MONGO_URI = process.env.MONGO_URI;
 app.use(cors({
   origin: [
     'http://localhost:5173',
-    'https://hotel-frontend-navy-tau.vercel.app',
+    // 'https://hotel-frontend-navy-tau.vercel.app',
     'https://hotel-frontend-orcin.vercel.app'
   ],
   credentials: true,
