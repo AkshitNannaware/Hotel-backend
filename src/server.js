@@ -50,8 +50,8 @@ const MONGO_URI = process.env.MONGO_URI;
 app.use(cors({
   origin: [
     'http://localhost:5173',
-    // 'https://hotel-frontend-navy-tau.vercel.app',
-    // 'https://hotel-frontend-orcin.vercel.app' // <-- add this
+    'https://hotel-frontend-navy-tau.vercel.app',
+    'https://hotel-frontend-orcin.vercel.app' // <-- add this
   ],
   credentials: true,
 }));
@@ -79,6 +79,7 @@ app.use('/api/admin/bookings', adminBookingRoutes);
 app.use('/api/service-bookings', serviceBookingRouter);
 app.use('/api/contact', contactRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/admin/services', adminServiceRoutes);
 app.use('/api/admin/offers', adminOfferRoutes);
 app.use('/api/admin/contacts', adminContactRoutes);
 app.use('/api/admin/service-bookings', adminServiceBookingRoutes);

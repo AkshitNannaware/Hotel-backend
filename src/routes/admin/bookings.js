@@ -178,7 +178,7 @@ router.get('/:id', async (req, res, next) => {
     if (!booking) {
       return res.status(404).json({ message: 'Booking not found' });
     }
-    res.json(booking);
+    res.json(booking.toObject());
   } catch (err) {
     next(err);
   }
@@ -207,7 +207,7 @@ router.patch('/:id/status', async (req, res, next) => {
     }
     booking.status = status;
     await booking.save();
-    res.json(booking);
+    res.json(booking.toObject());
   } catch (err) {
     next(err);
   }
@@ -236,13 +236,53 @@ router.patch('/:id/id-proof', requireAuth, requireAdmin, upload.single('idProof'
     booking.idProofUploadedAt = new Date();
     booking.idVerified = 'pending';
     await booking.save();
-    res.json(booking);
+
+    // Notify user that admin has updated ID proof
+    try {
+      const Notification = require('../../models/Notification');
+      await Notification.create({
+        userId: booking.userId,
+        title: 'ID Proof Updated',
+        message: 'Your ID proof has been updated by admin. Awaiting approval.',
+        role: 'user',
+      });
+    } catch (err) {
+      console.warn('Failed to create user notification:', err);
+    }
+
+    res.json(booking.toObject());
   } catch (err) {
     next(err);
   }
 });
 
 // GET /api/admin/bookings - Get all bookings (admin only)
+// GET /api/admin/bookings-ids - List all booking IDs (admin only, debug)
+router.get('/booking-ids', requireAuth, requireAdmin, async (req, res, next) => {
+  try {
+    const bookings = await Booking.find({}, { _id: 1 }).lean();
+    const ids = bookings.map(b => b._id);
+    res.json({ bookingIds: ids });
+  } catch (err) {
+    next(err);
+  }
+});
+// GET /api/admin/bookings/:id - Get booking by ID (admin only)
+router.get('/:id', requireAuth, requireAdmin, async (req, res, next) => {
+  try {
+    console.log('Admin booking fetch:', req.params.id);
+    const booking = await Booking.findById(req.params.id).lean();
+    if (!booking) {
+      console.log('Booking not found for ID:', req.params.id);
+      return res.status(404).json({ message: 'Booking not found' });
+    }
+    console.log('Booking found:', booking);
+    res.json(booking.toObject());
+  } catch (err) {
+    console.error('Error fetching booking:', err);
+    next(err);
+  }
+});
 router.get('/', requireAuth, requireAdmin, async (req, res, next) => {
   try {
     // Always include guestPhone in the response

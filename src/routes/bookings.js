@@ -195,6 +195,19 @@ router.post('/', async (req, res, next) => {
       bookingDate: new Date(),
     });
 
+    // Create notification for admin
+    try {
+      const Notification = require('../models/Notification');
+      await Notification.create({
+        title: 'New Room Booking',
+        message: `A new booking was made by ${guestName} (${guestEmail}).`,
+        role: 'admin',
+        userId: '',
+      });
+    } catch (err) {
+      console.warn('Failed to create admin notification:', err);
+    }
+
     res.status(201).json(booking);
   } catch (err) {
     next(err);
