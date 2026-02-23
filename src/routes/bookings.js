@@ -190,7 +190,7 @@ router.post('/', async (req, res, next) => {
       guestName,
       guestEmail,
       guestPhone,
-      status: 'confirmed',
+      status: 'pending',
       paymentStatus: 'pending',
       bookingDate: new Date(),
     });
