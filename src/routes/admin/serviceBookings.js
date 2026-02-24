@@ -318,7 +318,7 @@ router.post('/bulk-import', async (req, res, next) => {
     } catch (err) {
         // Handle validation errors from mongoose
         if (err.name === 'ValidationError') {
-            const validationErrors = Object.values(err.errors || {}).map((e: any) => e.message);
+            const validationErrors = Object.values(err.errors || {}).map((e) => e.message);
             return res.status(400).json({ 
                 message: 'Validation error',
                 errors: validationErrors
