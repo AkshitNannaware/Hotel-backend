@@ -521,11 +521,41 @@ router.patch('/bookings/:id/id-verified', async (req, res, next) => {
       return res.status(400).json({ message: 'Approved ID verification cannot be changed' });
     }
 
+    // Update ID verification status
+    const updateData = { idVerified };
+    
+    // Automatically confirm booking when ID is approved
+    // Set status to confirmed unless already checked-in, checked-out, or cancelled
+    if (idVerified === 'approved') {
+      const finalStatuses = ['checked-in', 'checked-out', 'cancelled'];
+      if (!finalStatuses.includes(existingBooking.status)) {
+        updateData.status = 'confirmed';
+        console.log(`Auto-confirming booking ${req.params.id}: status changed from ${existingBooking.status} to confirmed`);
+      }
+    }
+
     const booking = await Booking.findByIdAndUpdate(
       req.params.id,
-      { idVerified },
+      updateData,
       { new: true, runValidators: true }
-    );
+    ).lean();
+    
+    console.log(`Booking ${req.params.id} updated: idVerified=${booking.idVerified}, status=${booking.status}`);
+
+    // Create notification for user when ID is approved and booking is confirmed
+    if (idVerified === 'approved' && booking.status === 'confirmed') {
+      try {
+        const Notification = require('../../models/Notification');
+        await Notification.create({
+          userId: booking.userId,
+          title: 'Booking Confirmed',
+          message: `Your booking has been confirmed after ID verification approval.`,
+          role: 'user',
+        });
+      } catch (err) {
+        console.warn('Failed to create user notification:', err);
+      }
+    }
 
     res.json(booking);
   } catch (err) {

@@ -43,13 +43,13 @@ router.patch('/:id/payment-status', async (req, res, next) => {
 // POST /api/service-bookings - Create a new booking
 router.post('/', async (req, res, next) => {
     try {
-        const { 
-            serviceId, 
-            date, 
-            time, 
-            guests, 
-            guestName, 
-            guestEmail, 
+        const {
+            serviceId,
+            date,
+            time,
+            guests,
+            guestName,
+            guestEmail,
             guestPhone,
             specialRequests 
         } = req.body;
@@ -70,6 +70,21 @@ router.post('/', async (req, res, next) => {
             return res.status(404).json({ message: 'Service not found' });
         }
 
+        // Derive a numeric base price from service.priceRange (strip currency symbols / text)
+        let basePrice = 0;
+        if (service.priceRange) {
+            const numeric = Number(String(service.priceRange).replace(/[^0-9.]/g, ''));
+            if (Number.isFinite(numeric) && numeric > 0) {
+                basePrice = numeric;
+            }
+        }
+
+        // Compute total price (per-guest pricing)
+        const guestCount = Number(guests);
+        const totalPrice = basePrice > 0 && Number.isFinite(guestCount)
+            ? basePrice * guestCount
+            : 0;
+
         // Always create booking with 'pending' status - admin approval required before confirmation
         const booking = await ServiceBooking.create({
             serviceId: service._id,
@@ -78,13 +93,14 @@ router.post('/', async (req, res, next) => {
             priceRange: service.priceRange || '',
             date: new Date(date),
             time,
-            guests: Number(guests),
+            guests: guestCount,
             userId: req.user?.id || '',
             guestName,
             guestEmail,
             guestPhone: guestPhone || '',
             specialRequests: specialRequests || '',
-            status: 'pending' // Always start as pending - admin must approve before confirmation
+            status: 'pending', // Always start as pending - admin must approve before confirmation
+            totalPrice,
         });
 
         res.status(201).json(booking);

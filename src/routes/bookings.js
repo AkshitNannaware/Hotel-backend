@@ -200,7 +200,7 @@ router.post('/', async (req, res, next) => {
       const Notification = require('../models/Notification');
       await Notification.create({
         title: 'New Room Booking',
-        message: `A new booking was made by ${guestName} (${guestEmail}).`,
+        message: `A new booking was made by ${guestName} (${guestEmail}). Awaiting ID approval.`,
         role: 'admin',
         userId: '',
       });

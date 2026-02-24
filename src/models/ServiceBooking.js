@@ -43,6 +43,8 @@ const serviceBookingSchema = new mongoose.Schema(
     serviceName: { type: String, required: true },
     category: { type: String, enum: ['dining', 'restaurant', 'spa', 'bar'], required: true },
     priceRange: { type: String, default: '' },
+    // Numeric total price used for payments (in INR, not paise)
+    totalPrice: { type: Number, default: 0 },
     date: { type: Date, required: true },
     time: { type: String, required: true },
     guests: { type: Number, required: true },

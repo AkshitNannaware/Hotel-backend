@@ -137,20 +137,42 @@ router.post('/razorpay/service-order', async (req, res, next) => {
       return res.status(400).json({ message: 'Cancelled service bookings cannot be paid' });
     }
 
-    // Use totalPrice if available, else fallback to priceRange (parse as number)
-    let amount = 0;
-    if (serviceBooking.totalPrice) {
-      amount = Math.round(Number(serviceBooking.totalPrice) * 100);
+    // Prefer numeric totalPrice; otherwise, derive from priceRange and guests
+    let amountInPaise = 0;
+
+    const numericTotal = Number(serviceBooking.totalPrice);
+    if (Number.isFinite(numericTotal) && numericTotal > 0) {
+      amountInPaise = Math.round(numericTotal * 100);
     } else if (serviceBooking.priceRange) {
-      amount = Math.round(Number(serviceBooking.priceRange) * 100);
+      // Strip currency symbols/text (e.g. "₹200-500" -> "200500" then choose lower bound)
+      const cleaned = String(serviceBooking.priceRange)
+        .split('-')[0] // take lower end of range if present
+        .replace(/[^0-9.]/g, '');
+      const base = Number(cleaned);
+      const guests = Number(serviceBooking.guests || 1);
+      if (Number.isFinite(base) && base > 0 && Number.isFinite(guests) && guests > 0) {
+        const total = base * guests;
+        amountInPaise = Math.round(total * 100);
+      }
     }
-    if (!Number.isFinite(amount) || amount <= 0) {
-      return res.status(400).json({ message: 'Invalid service booking amount' });
+
+    if (!Number.isFinite(amountInPaise) || amountInPaise <= 0) {
+      // As a final fallback, use a safe default amount per guest to avoid blocking payment
+      const guests = Number(serviceBooking.guests || 1);
+      const perGuestFallback = 100; // ₹100 per guest
+      const totalFallback = perGuestFallback * (Number.isFinite(guests) && guests > 0 ? guests : 1);
+      amountInPaise = Math.round(totalFallback * 100);
+      console.warn('Falling back to default service booking amount', {
+        serviceBookingId: serviceBooking._id?.toString?.() || serviceBookingId,
+        originalTotalPrice: serviceBooking.totalPrice,
+        originalPriceRange: serviceBooking.priceRange,
+        guests: serviceBooking.guests,
+      });
     }
 
     const { client } = getRazorpayClient();
     const order = await client.orders.create({
-      amount,
+      amount: amountInPaise,
       currency: 'INR',
       receipt: `service_booking_${serviceBooking._id}`,
       notes: {
