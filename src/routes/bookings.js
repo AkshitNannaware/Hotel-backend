@@ -189,7 +189,7 @@ router.post('/', async (req, res, next) => {
       userId: req.user.id,
       guestName,
       guestEmail,
-      guestPhone,
+      guestPhone: guestPhone ? String(guestPhone).replace(/^\+/, '') : guestPhone,
       status: 'pending',
       paymentStatus: 'pending',
       bookingDate: new Date(),

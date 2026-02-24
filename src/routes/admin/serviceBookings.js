@@ -106,7 +106,7 @@ router.post('/', async (req, res, next) => {
             userId: '',
             guestName,
             guestEmail,
-            guestPhone: guestPhone || '',
+            guestPhone: guestPhone ? String(guestPhone).replace(/^\+/, '') : '',
             specialRequests: specialRequests || '',
             status: 'pending',
         });

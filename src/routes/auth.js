@@ -27,8 +27,9 @@ const normalizePhone = (value) => {
   if (!value) {
     return '';
   }
+  // Remove all non-digit characters including the + sign
   const digits = String(value).replace(/\D/g, '');
-  return digits ? `+${digits}` : '';
+  return digits || '';
 };
 
 const normalizeEmail = (value) => {

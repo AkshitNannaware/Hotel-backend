@@ -97,7 +97,7 @@ router.post('/', async (req, res, next) => {
             userId: req.user?.id || '',
             guestName,
             guestEmail,
-            guestPhone: guestPhone || '',
+            guestPhone: guestPhone ? String(guestPhone).replace(/^\+/, '') : '',
             specialRequests: specialRequests || '',
             status: 'pending', // Always start as pending - admin must approve before confirmation
             totalPrice,
