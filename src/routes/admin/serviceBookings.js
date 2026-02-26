@@ -50,9 +50,25 @@ router.patch('/:id/status', async (req, res, next) => {
             return res.status(404).json({ message: 'Service booking not found' });
         }
 
+        const previousStatus = booking.status;
         booking.status = status;
         if (paymentStatus) booking.paymentStatus = paymentStatus;
         await booking.save();
+
+        // Send email notifications based on status change
+        try {
+            const emailService = require('../../utils/emailService');
+            if (status === 'confirmed' && previousStatus !== 'confirmed') {
+                await emailService.sendServiceBookingConfirmation(booking);
+            }
+            // Send payment notification if payment status changed to paid
+            if (paymentStatus === 'paid' && booking.paymentStatus === 'paid') {
+                await emailService.sendServicePaymentConfirmation(booking);
+                await emailService.sendPaymentReceivedAdminNotification(booking, true);
+            }
+        } catch (err) {
+            console.warn('Failed to send email notification:', err);
+        }
 
         // Return the full booking object for consistency
         const updatedBooking = await ServiceBooking.findById(id).lean();

@@ -108,7 +108,19 @@ router.post('/razorpay/verify', async (req, res, next) => {
     }
 
     booking.paymentStatus = 'paid';
+    booking.paymentMethod = 'online';
     await booking.save();
+
+    // Send email notifications
+    try {
+      const emailService = require('../utils/emailService');
+      // Send to user - payment confirmation
+      await emailService.sendPaymentConfirmation(booking);
+      // Send to admin - payment received
+      await emailService.sendPaymentReceivedAdminNotification(booking, false);
+    } catch (err) {
+      console.warn('Failed to send email notifications:', err);
+    }
 
     res.json({ status: 'verified', paymentId: razorpay_payment_id });
   } catch (err) {
@@ -224,7 +236,20 @@ router.post('/razorpay/service-verify', async (req, res, next) => {
     }
 
     serviceBooking.status = 'confirmed';
+    serviceBooking.paymentStatus = 'paid';
+    serviceBooking.paymentMethod = 'online';
     await serviceBooking.save();
+
+    // Send email notifications
+    try {
+      const emailService = require('../utils/emailService');
+      // Send to user - service payment confirmation
+      await emailService.sendServicePaymentConfirmation(serviceBooking);
+      // Send to admin - payment received
+      await emailService.sendPaymentReceivedAdminNotification(serviceBooking, true);
+    } catch (err) {
+      console.warn('Failed to send email notifications:', err);
+    }
 
     res.json({ status: 'verified', paymentId: razorpay_payment_id });
   } catch (err) {

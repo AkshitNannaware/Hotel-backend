@@ -208,6 +208,17 @@ router.post('/', async (req, res, next) => {
       console.warn('Failed to create admin notification:', err);
     }
 
+    // Send email notifications
+    try {
+      const emailService = require('../utils/emailService');
+      // Send to user - booking created
+      await emailService.sendBookingConfirmation(booking);
+      // Send to admin - new booking
+      await emailService.sendNewBookingAdminNotification(booking);
+    } catch (err) {
+      console.warn('Failed to send email notifications:', err);
+    }
+
     res.status(201).json(booking);
   } catch (err) {
     next(err);
@@ -265,9 +276,27 @@ router.patch('/:id/status', async (req, res, next) => {
       return res.status(400).json({ message: 'ID verification is required before check-in' });
     }
 
+    const previousStatus = booking.status;
     booking.status = status;
     booking.cancelledAt = status === 'cancelled' ? new Date() : undefined;
     await booking.save();
+
+    // Send email notifications based on status change
+    try {
+      const emailService = require('../utils/emailService');
+      if (status === 'confirmed' && previousStatus !== 'confirmed') {
+        await emailService.sendBookingConfirmation(booking);
+      } else if (status === 'cancelled' && previousStatus !== 'cancelled') {
+        await emailService.sendBookingCancellation(booking);
+      } else if (status === 'checked-in' && previousStatus !== 'checked-in') {
+        await emailService.sendCheckInNotification(booking);
+      } else if (status === 'checked-out' && previousStatus !== 'checked-out') {
+        await emailService.sendCheckOutNotification(booking);
+      }
+    } catch (err) {
+      console.warn('Failed to send email notification:', err);
+    }
+
     res.json(booking);
   } catch (err) {
     next(err);

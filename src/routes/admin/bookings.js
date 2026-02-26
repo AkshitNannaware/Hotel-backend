@@ -213,10 +213,33 @@ router.patch('/:id/status', async (req, res, next) => {
     if (booking.status === 'cancelled' && status === 'confirmed') {
       return res.status(400).json({ message: 'Booking is already Cancelled and cannot be approved.' });
     }
+    const previousStatus = booking.status;
     booking.status = status;
     if (paymentStatus) booking.paymentStatus = paymentStatus;
     if (paymentMethod) booking.paymentMethod = paymentMethod;
     await booking.save();
+
+    // Send email notifications based on status change
+    try {
+      const emailService = require('../../utils/emailService');
+      if (status === 'confirmed' && previousStatus !== 'confirmed') {
+        await emailService.sendBookingConfirmation(booking);
+      } else if (status === 'cancelled' && previousStatus !== 'cancelled') {
+        await emailService.sendBookingCancellation(booking);
+      } else if (status === 'checked-in' && previousStatus !== 'checked-in') {
+        await emailService.sendCheckInNotification(booking);
+      } else if (status === 'checked-out' && previousStatus !== 'checked-out') {
+        await emailService.sendCheckOutNotification(booking);
+      }
+      // Send payment notification if payment status changed to paid
+      if (paymentStatus === 'paid' && booking.paymentStatus === 'paid') {
+        await emailService.sendPaymentConfirmation(booking);
+        await emailService.sendPaymentReceivedAdminNotification(booking, false);
+      }
+    } catch (err) {
+      console.warn('Failed to send email notification:', err);
+    }
+
     res.json(booking.toObject());
   } catch (err) {
     next(err);
