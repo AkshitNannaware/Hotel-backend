@@ -219,6 +219,51 @@ router.patch('/:id/status', async (req, res, next) => {
     if (paymentMethod) booking.paymentMethod = paymentMethod;
     await booking.save();
 
+    // Create in-app notifications for user based on status change
+    try {
+      const Notification = require('../../models/Notification');
+      if (status === 'confirmed' && previousStatus !== 'confirmed') {
+        await Notification.create({
+          userId: booking.userId,
+          title: 'Booking Confirmed',
+          message: `Your booking has been confirmed. Check-in: ${new Date(booking.checkIn).toLocaleDateString()}.`,
+          role: 'user',
+        });
+      } else if (status === 'cancelled' && previousStatus !== 'cancelled') {
+        await Notification.create({
+          userId: booking.userId,
+          title: 'Booking Cancelled',
+          message: `Your booking has been cancelled. Please contact us if you have questions.`,
+          role: 'user',
+        });
+      } else if (status === 'checked-in' && previousStatus !== 'checked-in') {
+        await Notification.create({
+          userId: booking.userId,
+          title: 'Checked In',
+          message: `You have successfully checked in. Enjoy your stay!`,
+          role: 'user',
+        });
+      } else if (status === 'checked-out' && previousStatus !== 'checked-out') {
+        await Notification.create({
+          userId: booking.userId,
+          title: 'Checked Out',
+          message: `You have checked out. Thank you for staying with us!`,
+          role: 'user',
+        });
+      }
+      // In-app notification for payment received
+      if (paymentStatus === 'paid' && previousStatus !== 'paid') {
+        await Notification.create({
+          userId: booking.userId,
+          title: 'Payment Received',
+          message: `Your payment of $${booking.totalPrice} has been received. Thank you!`,
+          role: 'user',
+        });
+      }
+    } catch (err) {
+      console.warn('Failed to create in-app notification:', err);
+    }
+
     // Send email notifications based on status change
     try {
       const emailService = require('../../utils/emailService');

@@ -103,6 +103,19 @@ router.post('/', async (req, res, next) => {
             totalPrice,
         });
 
+        // Create in-app notification for admin
+        try {
+            const Notification = require('../models/Notification');
+            await Notification.create({
+                title: 'New Service Booking',
+                message: `${guestName} (${guestEmail}) booked "${service.name}" for ${new Date(date).toLocaleDateString()}.`,
+                role: 'admin',
+                userId: '',
+            });
+        } catch (err) {
+            console.warn('Failed to create admin notification:', err);
+        }
+
         // Send email notifications
         try {
             const emailService = require('../utils/emailService');

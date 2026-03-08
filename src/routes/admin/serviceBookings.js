@@ -55,6 +55,37 @@ router.patch('/:id/status', async (req, res, next) => {
         if (paymentStatus) booking.paymentStatus = paymentStatus;
         await booking.save();
 
+        // Create in-app notifications for user based on status change
+        try {
+            const Notification = require('../../models/Notification');
+            if (status === 'confirmed' && previousStatus !== 'confirmed') {
+                await Notification.create({
+                    userId: booking.userId,
+                    title: 'Service Booking Confirmed',
+                    message: `Your booking for "${booking.serviceName}" on ${new Date(booking.date).toLocaleDateString()} has been confirmed.`,
+                    role: 'user',
+                });
+            } else if (status === 'cancelled' && previousStatus !== 'cancelled') {
+                await Notification.create({
+                    userId: booking.userId,
+                    title: 'Service Booking Cancelled',
+                    message: `Your booking for "${booking.serviceName}" has been cancelled. Please contact us if you have questions.`,
+                    role: 'user',
+                });
+            }
+            // In-app notification for payment received
+            if (paymentStatus === 'paid' && previousStatus !== 'paid') {
+                await Notification.create({
+                    userId: booking.userId,
+                    title: 'Service Payment Received',
+                    message: `Your payment of $${booking.totalPrice} for "${booking.serviceName}" has been received. Thank you!`,
+                    role: 'user',
+                });
+            }
+        } catch (err) {
+            console.warn('Failed to create in-app notification:', err);
+        }
+
         // Send email notifications based on status change
         try {
             const emailService = require('../../utils/emailService');
