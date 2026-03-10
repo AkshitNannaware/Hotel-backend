@@ -42,6 +42,7 @@ const newsletterRoutes = require('./routes/newsletter');
 const adminNewsletterRoutes = require('./routes/admin/newsletters');
 const notificationRoutes = require('./routes/notifications');
 const User = require('./models/User');
+const Room = require('./models/Room');
 
 const app = express();
 const PORT = process.env.PORT || 5000; 
@@ -49,9 +50,8 @@ const MONGO_URI = process.env.MONGO_URI;
 
 app.use(cors({
   origin: [
-    'http://localhost:5173',
-    'https://hotel-frontend-navy-tau.vercel.app',
-    'https://hotel-frontend-orcin.vercel.app'
+    // 'http://localhost:5173',
+    // 'https://hotel-frontend-orcin.vercel.app'
   ],
   credentials: true,
 }));
@@ -105,6 +105,19 @@ async function startServer() {
   try {
     await mongoose.connect(MONGO_URI);
     console.log('MongoDB connected');
+
+    // Migration: add `location` field to rooms that don't have it yet
+    try {
+      const result = await Room.updateMany(
+        { location: { $exists: false } },
+        { $set: { location: '' } }
+      );
+      if (result.modifiedCount > 0) {
+        console.log(`Migration: added location field to ${result.modifiedCount} existing room(s)`);
+      }
+    } catch (err) {
+      console.warn('Migration warning (location field):', err.message);
+    }
   } catch (err) {
     console.error('MongoDB connection failed.', err);
     process.exit(1);

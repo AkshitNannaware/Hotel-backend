@@ -12,6 +12,7 @@ const roomSchema = new mongoose.Schema(
     maxGuests: { type: Number, default: 1 },
     size: { type: Number, default: 0 },
     available: { type: Boolean, default: true },
+    location: { type: String, default: '' },
   },
   { timestamps: true }
 );
