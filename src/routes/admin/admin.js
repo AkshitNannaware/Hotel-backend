@@ -166,26 +166,6 @@ router.patch('/profile', requireAuth, requireAdmin, async (req, res, next) => {
     next(err);
   }
 });
-// POST /api/admin/profile/upload-logo - Upload logo
-router.post('/profile/upload-logo', requireAuth, requireAdmin, uploadLogo.single('logo'), async (req, res, next) => {
-  try {
-    if (!req.user || !req.user.id) {
-      return res.status(401).json({ message: 'Unauthorized: user not found in request. Please log in again.' });
-    }
-    if (!req.file) {
-      return res.status(400).json({ message: 'No logo file uploaded' });
-    }
-    const userId = req.user.id;
-    const logoUrl = `/uploads/logo/${req.file.filename}`;
-    const user = await User.findByIdAndUpdate(userId, { logoUrl }, { new: true, runValidators: true, select: '-passwordHash' });
-    if (!user) {
-      return res.status(404).json({ message: 'User not found' });
-    }
-    res.json({ message: 'Logo uploaded successfully', logoUrl, user });
-  } catch (err) {
-    next(err);
-  }
-});
 
 // PATCH /api/admin/profile/password - update admin password
 router.patch('/profile/password', requireAuth, requireAdmin, async (req, res, next) => {
@@ -223,8 +203,6 @@ router.patch('/profile/password', requireAuth, requireAdmin, async (req, res, ne
 const path = require('path');
 const fs = require('fs');
 const multer = require('multer');
-
-router.use(requireDb, requireAuth, requireAdmin);
 
 // Setup multer for room image uploads
 const roomImagesDir = path.join(__dirname, '..', '..', '..', 'uploads', 'rooms');
@@ -309,6 +287,32 @@ const uploadLogo = multer({
     cb(null, true);
   },
 });
+
+// NOTE: routes below this line can safely use uploadRoomImages, uploadRoomVideo, and uploadLogo
+
+// POST /api/admin/profile/upload-logo - Upload logo
+router.post('/profile/upload-logo', requireAuth, requireAdmin, uploadLogo.single('logo'), async (req, res, next) => {
+  try {
+    if (!req.user || !req.user.id) {
+      return res.status(401).json({ message: 'Unauthorized: user not found in request. Please log in again.' });
+    }
+    if (!req.file) {
+      return res.status(400).json({ message: 'No logo file uploaded' });
+    }
+    const userId = req.user.id;
+    const logoUrl = `/uploads/logo/${req.file.filename}`;
+    const user = await User.findByIdAndUpdate(userId, { logoUrl }, { new: true, runValidators: true, select: '-passwordHash' });
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    res.json({ message: 'Logo uploaded successfully', logoUrl, user });
+  } catch (err) {
+    next(err);
+  }
+});
+
+const { requireDb } = require('../../middleware/requireDb');
+router.use(requireDb, requireAuth, requireAdmin);
 
 // GET /api/admin/stats
 router.get('/stats', async (req, res, next) => {
