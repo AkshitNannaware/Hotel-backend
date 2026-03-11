@@ -4,6 +4,11 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const JWT_SECRET = process.env.JWT_SECRET || '';
 const { requireAuth, requireAdmin } = require('../../middleware/auth');
+const User = require('../../models/User');
+const Booking = require('../../models/Booking');
+const Room = require('../../models/Room');
+const Service = require('../../models/Service');
+const { requireDb } = require('../../middleware/requireDb');
 
 router.post('/admin-signup', async (req, res) => {
   try {
@@ -117,6 +122,23 @@ router.post('/users', async (req, res, next) => {
   }
 });
 
+// GET /api/admin/profile - get admin profile
+router.get('/profile', requireAuth, requireAdmin, async (req, res, next) => {
+  try {
+    if (!req.user || !req.user.id) {
+      return res.status(401).json({ message: 'Unauthorized: user not found in request. Please log in again.' });
+    }
+    const userId = req.user.id;
+    const user = await User.findById(userId).select('-passwordHash');
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    res.json(user);
+  } catch (err) {
+    next(err);
+  }
+});
+
 // PATCH /api/admin/profile - update admin profile (name, email, phone)
 router.patch('/profile', requireAuth, requireAdmin, async (req, res, next) => {
   try {
@@ -144,6 +166,27 @@ router.patch('/profile', requireAuth, requireAdmin, async (req, res, next) => {
     next(err);
   }
 });
+// POST /api/admin/profile/upload-logo - Upload logo
+router.post('/profile/upload-logo', requireAuth, requireAdmin, uploadLogo.single('logo'), async (req, res, next) => {
+  try {
+    if (!req.user || !req.user.id) {
+      return res.status(401).json({ message: 'Unauthorized: user not found in request. Please log in again.' });
+    }
+    if (!req.file) {
+      return res.status(400).json({ message: 'No logo file uploaded' });
+    }
+    const userId = req.user.id;
+    const logoUrl = `/uploads/logo/${req.file.filename}`;
+    const user = await User.findByIdAndUpdate(userId, { logoUrl }, { new: true, runValidators: true, select: '-passwordHash' });
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    res.json({ message: 'Logo uploaded successfully', logoUrl, user });
+  } catch (err) {
+    next(err);
+  }
+});
+
 // PATCH /api/admin/profile/password - update admin password
 router.patch('/profile/password', requireAuth, requireAdmin, async (req, res, next) => {
   try {
@@ -180,58 +223,6 @@ router.patch('/profile/password', requireAuth, requireAdmin, async (req, res, ne
 const path = require('path');
 const fs = require('fs');
 const multer = require('multer');
-const Booking = require('../../models/Booking');
-const Room = require('../../models/Room');
-const Service = require('../../models/Service');
-const User = require('../../models/User');
-const { requireDb } = require('../../middleware/requireDb');
-
-router.post('/admin-signup', async (req, res) => {
-  try {
-    const { name, email, phone, password, secret } = req.body;
-    // Optional: Check secret/invite code
-    if (!secret || secret !== process.env.ADMIN_SIGNUP_SECRET) {
-      return res.status(403).json({ message: 'Invalid admin secret.' });
-    }
-    if (!name || !password || (!email && !phone)) {
-      return res.status(400).json({ message: 'Name, password, and email or phone are required' });
-    }
-    const normalizedEmail = email ? String(email).trim().toLowerCase() : '';
-    const normalizedPhone = phone ? String(phone).replace(/\D/g, '') : '';
-    const orQuery = [];
-    if (normalizedEmail) orQuery.push({ email: normalizedEmail });
-    if (normalizedPhone) orQuery.push({ phone: normalizedPhone });
-    const existing = orQuery.length ? await User.findOne({ $or: orQuery }) : null;
-    if (existing) {
-      return res.status(409).json({ message: 'User already exists with this email or phone' });
-    }
-    const bcrypt = require('bcryptjs');
-    const passwordHash = await bcrypt.hash(password, 10);
-    const newUser = await User.create({
-      name,
-      email: normalizedEmail || undefined,
-      phone: normalizedPhone || undefined,
-      role: 'admin',
-      passwordHash,
-    });
-    // Issue JWT
-    const token = jwt.sign({ id: newUser._id, role: 'admin', name: newUser.name, email: newUser.email }, JWT_SECRET, { expiresIn: '2h' });
-    res.status(201).json({
-      user: {
-        id: newUser._id.toString(),
-        name: newUser.name,
-        email: newUser.email,
-        phone: newUser.phone,
-        role: newUser.role,
-        twoFactorEnabled: newUser.twoFactorEnabled,
-      },
-      token,
-      message: 'Admin created successfully',
-    });
-  } catch (err) {
-    res.status(500).json({ message: 'Failed to create admin', error: err.message });
-  }
-});
 
 router.use(requireDb, requireAuth, requireAdmin);
 
@@ -286,6 +277,34 @@ const uploadRoomVideo = multer({
     const allowed = ['video/mp4', 'video/webm', 'video/ogg', 'video/quicktime'];
     if (!allowed.includes(file.mimetype)) {
       return cb(new Error('Invalid file type. Only MP4, WebM, OGG, and MOV videos are allowed.'));
+    }
+    cb(null, true);
+  },
+});
+
+// Setup multer for logo uploads
+const logoDir = path.join(__dirname, '..', '..', '..', 'uploads', 'logo');
+fs.mkdirSync(logoDir, { recursive: true });
+
+const logoStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, logoDir);
+  },
+  filename: (req, file, cb) => {
+    const ext = path.extname(file.originalname) || '';
+    const safeExt = ext.toLowerCase();
+    const unique = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
+    cb(null, `logo-${unique}${safeExt}`);
+  },
+});
+
+const uploadLogo = multer({
+  storage: logoStorage,
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
+  fileFilter: (req, file, cb) => {
+    const allowed = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/svg+xml'];
+    if (!allowed.includes(file.mimetype)) {
+      return cb(new Error('Invalid file type. Only JPEG, PNG, WebP, and SVG images are allowed.'));
     }
     cb(null, true);
   },
