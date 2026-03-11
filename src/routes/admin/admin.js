@@ -10,6 +10,95 @@ const Room = require('../../models/Room');
 const Service = require('../../models/Service');
 const { requireDb } = require('../../middleware/requireDb');
 
+// Setup multer for file uploads (must be before routes that use them)
+const path = require('path');
+const fs = require('fs');
+const multer = require('multer');
+
+// Setup multer for room image uploads
+const roomImagesDir = path.join(__dirname, '..', '..', '..', 'uploads', 'rooms');
+fs.mkdirSync(roomImagesDir, { recursive: true });
+
+const roomImageStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, roomImagesDir);
+  },
+  filename: (req, file, cb) => {
+    const ext = path.extname(file.originalname) || '';
+    const safeExt = ext.toLowerCase();
+    const unique = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
+    cb(null, `room-${unique}${safeExt}`);
+  },
+});
+
+const uploadRoomImages = multer({
+  storage: roomImageStorage,
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit
+  fileFilter: (req, file, cb) => {
+    const allowed = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+    if (!allowed.includes(file.mimetype)) {
+      return cb(new Error('Invalid file type. Only JPEG, PNG, and WebP images are allowed.'));
+    }
+    cb(null, true);
+  },
+});
+
+// Setup multer for room video uploads
+const roomVideosDir = path.join(__dirname, '..', '..', '..', 'uploads', 'rooms', 'videos');
+fs.mkdirSync(roomVideosDir, { recursive: true });
+
+const roomVideoStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, roomVideosDir);
+  },
+  filename: (req, file, cb) => {
+    const ext = path.extname(file.originalname) || '';
+    const safeExt = ext.toLowerCase();
+    const unique = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
+    cb(null, `room-video-${unique}${safeExt}`);
+  },
+});
+
+const uploadRoomVideo = multer({
+  storage: roomVideoStorage,
+  limits: { fileSize: 50 * 1024 * 1024 }, // 50MB limit
+  fileFilter: (req, file, cb) => {
+    const allowed = ['video/mp4', 'video/webm', 'video/ogg', 'video/quicktime'];
+    if (!allowed.includes(file.mimetype)) {
+      return cb(new Error('Invalid file type. Only MP4, WebM, OGG, and MOV videos are allowed.'));
+    }
+    cb(null, true);
+  },
+});
+
+// Setup multer for logo uploads
+const logoDir = path.join(__dirname, '..', '..', '..', 'uploads', 'logo');
+fs.mkdirSync(logoDir, { recursive: true });
+
+const logoStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, logoDir);
+  },
+  filename: (req, file, cb) => {
+    const ext = path.extname(file.originalname) || '';
+    const safeExt = ext.toLowerCase();
+    const unique = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
+    cb(null, `logo-${unique}${safeExt}`);
+  },
+});
+
+const uploadLogo = multer({
+  storage: logoStorage,
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
+  fileFilter: (req, file, cb) => {
+    const allowed = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/svg+xml'];
+    if (!allowed.includes(file.mimetype)) {
+      return cb(new Error('Invalid file type. Only JPEG, PNG, WebP, and SVG images are allowed.'));
+    }
+    cb(null, true);
+  },
+});
+
 router.post('/admin-signup', async (req, res) => {
   try {
     const { name, email, phone, password, secret } = req.body;
@@ -200,96 +289,6 @@ router.patch('/profile/password', requireAuth, requireAdmin, async (req, res, ne
   }
 });
 
-const path = require('path');
-const fs = require('fs');
-const multer = require('multer');
-
-// Setup multer for room image uploads
-const roomImagesDir = path.join(__dirname, '..', '..', '..', 'uploads', 'rooms');
-fs.mkdirSync(roomImagesDir, { recursive: true });
-
-const roomImageStorage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, roomImagesDir);
-  },
-  filename: (req, file, cb) => {
-    const ext = path.extname(file.originalname) || '';
-    const safeExt = ext.toLowerCase();
-    const unique = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
-    cb(null, `room-${unique}${safeExt}`);
-  },
-});
-
-const uploadRoomImages = multer({
-  storage: roomImageStorage,
-  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit
-  fileFilter: (req, file, cb) => {
-    const allowed = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
-    if (!allowed.includes(file.mimetype)) {
-      return cb(new Error('Invalid file type. Only JPEG, PNG, and WebP images are allowed.'));
-    }
-    cb(null, true);
-  },
-});
-
-// Setup multer for room video uploads
-const roomVideosDir = path.join(__dirname, '..', '..', '..', 'uploads', 'rooms', 'videos');
-fs.mkdirSync(roomVideosDir, { recursive: true });
-
-const roomVideoStorage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, roomVideosDir);
-  },
-  filename: (req, file, cb) => {
-    const ext = path.extname(file.originalname) || '';
-    const safeExt = ext.toLowerCase();
-    const unique = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
-    cb(null, `room-video-${unique}${safeExt}`);
-  },
-});
-
-const uploadRoomVideo = multer({
-  storage: roomVideoStorage,
-  limits: { fileSize: 50 * 1024 * 1024 }, // 50MB limit
-  fileFilter: (req, file, cb) => {
-    const allowed = ['video/mp4', 'video/webm', 'video/ogg', 'video/quicktime'];
-    if (!allowed.includes(file.mimetype)) {
-      return cb(new Error('Invalid file type. Only MP4, WebM, OGG, and MOV videos are allowed.'));
-    }
-    cb(null, true);
-  },
-});
-
-// Setup multer for logo uploads
-const logoDir = path.join(__dirname, '..', '..', '..', 'uploads', 'logo');
-fs.mkdirSync(logoDir, { recursive: true });
-
-const logoStorage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, logoDir);
-  },
-  filename: (req, file, cb) => {
-    const ext = path.extname(file.originalname) || '';
-    const safeExt = ext.toLowerCase();
-    const unique = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
-    cb(null, `logo-${unique}${safeExt}`);
-  },
-});
-
-const uploadLogo = multer({
-  storage: logoStorage,
-  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
-  fileFilter: (req, file, cb) => {
-    const allowed = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/svg+xml'];
-    if (!allowed.includes(file.mimetype)) {
-      return cb(new Error('Invalid file type. Only JPEG, PNG, WebP, and SVG images are allowed.'));
-    }
-    cb(null, true);
-  },
-});
-
-// NOTE: routes below this line can safely use uploadRoomImages, uploadRoomVideo, and uploadLogo
-
 // POST /api/admin/profile/upload-logo - Upload logo
 router.post('/profile/upload-logo', requireAuth, requireAdmin, uploadLogo.single('logo'), async (req, res, next) => {
   try {
@@ -311,7 +310,6 @@ router.post('/profile/upload-logo', requireAuth, requireAdmin, uploadLogo.single
   }
 });
 
-const { requireDb } = require('../../middleware/requireDb');
 router.use(requireDb, requireAuth, requireAdmin);
 
 // GET /api/admin/stats
