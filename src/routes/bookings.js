@@ -138,6 +138,35 @@ router.post('/', async (req, res, next) => {
     let checkInDate = new Date(checkIn);
     let checkOutDate = new Date(checkOut);
 
+    // --- Date restriction validations ---
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const maxAllowed = new Date();
+    maxAllowed.setDate(maxAllowed.getDate() + 30);
+    maxAllowed.setHours(23, 59, 59, 999);
+
+    if (isNaN(checkInDate.getTime()) || isNaN(checkOutDate.getTime())) {
+      return res.status(400).json({ message: 'Invalid date format for check-in or check-out' });
+    }
+
+    if (checkInDate < today) {
+      return res.status(400).json({ message: 'Check-in date cannot be in the past' });
+    }
+
+    if (checkInDate > maxAllowed) {
+      return res.status(400).json({ message: 'Check-in date cannot be more than 30 days in the future' });
+    }
+
+    if (checkOutDate <= checkInDate) {
+      return res.status(400).json({ message: 'Checkout date must be after check-in date' });
+    }
+
+    if (checkOutDate > maxAllowed) {
+      return res.status(400).json({ message: 'Check-out date cannot be more than 30 days in the future' });
+    }
+    // --- End date restriction validations ---
+
     const existingBooking = await Booking.findOne({
       roomId,
       status: { $in: ACTIVE_BOOKING_STATUSES },
