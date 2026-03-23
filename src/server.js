@@ -41,8 +41,11 @@ const paymentRoutes = require('./routes/payments');
 const newsletterRoutes = require('./routes/newsletter');
 const adminNewsletterRoutes = require('./routes/admin/newsletters');
 const notificationRoutes = require('./routes/notifications');
+const blogsRoutes = require('./routes/blogs');
+
 const User = require('./models/User');
 const Room = require('./models/Room');
+const brandingRoutes = require('./routes/branding');
 
 const app = express();
 const PORT = process.env.PORT || 5000; 
@@ -71,6 +74,7 @@ app.get('/', (req, res) => {
 });
 
 app.use('/api/auth', authRoutes);
+app.use('/api/branding', brandingRoutes);
 app.use('/api/rooms', roomRoutes);
 app.use('/api/services', serviceRoutes);
 app.use('/api/offers', offerRoutes);
@@ -87,6 +91,7 @@ app.use('/api/payments', paymentRoutes);
 app.use('/api/newsletter', newsletterRoutes);
 app.use('/api/admin/newsletters', adminNewsletterRoutes);
 app.use('/api/notifications', notificationRoutes);
+app.use('/api/blogs', blogsRoutes);
 
 // Global error handler
 app.use((err, req, res, next) => {

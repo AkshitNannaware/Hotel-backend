@@ -13,6 +13,7 @@ const userSchema = new mongoose.Schema(
     instagram: { type: String, trim: true },
     youtube: { type: String, trim: true },
     twitter: { type: String, trim: true },
+    address: { type: String, trim: true },
   },
   { timestamps: true }
 );

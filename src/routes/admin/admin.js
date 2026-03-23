@@ -8,6 +8,7 @@ const User = require('../../models/User');
 const Booking = require('../../models/Booking');
 const Room = require('../../models/Room');
 const Service = require('../../models/Service');
+const Blog = require('../../models/Blog');
 const { requireDb } = require('../../middleware/requireDb');
 
 // Setup multer for file uploads (must be before routes that use them)
@@ -94,6 +95,34 @@ const uploadLogo = multer({
     const allowed = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/svg+xml'];
     if (!allowed.includes(file.mimetype)) {
       return cb(new Error('Invalid file type. Only JPEG, PNG, WebP, and SVG images are allowed.'));
+    }
+    cb(null, true);
+  },
+});
+
+// Setup multer for blog image uploads
+const blogImagesDir = path.join(__dirname, '..', '..', '..', 'uploads', 'blogs');
+fs.mkdirSync(blogImagesDir, { recursive: true });
+
+const blogImageStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, blogImagesDir);
+  },
+  filename: (req, file, cb) => {
+    const ext = path.extname(file.originalname) || '';
+    const safeExt = ext.toLowerCase();
+    const unique = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
+    cb(null, `blog-${unique}${safeExt}`);
+  },
+});
+
+const uploadBlogImage = multer({
+  storage: blogImageStorage,
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
+  fileFilter: (req, file, cb) => {
+    const allowed = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+    if (!allowed.includes(file.mimetype)) {
+      return cb(new Error('Invalid file type. Only JPEG, PNG, and WebP images are allowed.'));
     }
     cb(null, true);
   },
@@ -236,11 +265,12 @@ router.patch('/profile', requireAuth, requireAdmin, async (req, res, next) => {
       return res.status(401).json({ message: 'Unauthorized: user not found in request. Please log in again.' });
     }
     const userId = req.user.id;
-    const { name, email, phone, logoUrl, facebook, instagram, youtube, twitter } = req.body;
+    const { name, email, phone, address, logoUrl, facebook, instagram, youtube, twitter } = req.body;
     const update = {};
     if (name) update.name = name;
     if (email) update.email = email;
     if (phone) update.phone = phone;
+    if (address) update.address = address;
     if (logoUrl) update.logoUrl = logoUrl;
     if (facebook) update.facebook = facebook;
     if (instagram) update.instagram = instagram;
@@ -307,6 +337,16 @@ router.post('/profile/upload-logo', requireAuth, requireAdmin, uploadLogo.single
     res.json({ message: 'Logo uploaded successfully', logoUrl, user });
   } catch (err) {
     next(err);
+  }
+});
+
+// Public: list published blog posts
+router.get('/blogs', async (req, res) => {
+  try {
+    const blogs = await Blog.find().sort({ createdAt: -1 }).lean();
+    res.json(blogs);
+  } catch (error) {
+    res.status(500).json({ message: 'Failed to fetch blog posts', error: error.message });
   }
 });
 
@@ -614,6 +654,22 @@ router.patch('/users/:id/role', async (req, res, next) => {
     res.json(user);
   } catch (err) {
     next(err);
+  }
+});
+
+// Create a new blog post (admin only)
+router.post('/blogs', uploadBlogImage.single('image'), async (req, res) => {
+  try {
+    const { title, content, author, summary } = req.body;
+    if (!title || !content || !author || !summary) {
+      return res.status(400).json({ message: 'Title, content, author and summary are required' });
+    }
+    const image = req.file ? `/uploads/blogs/${req.file.filename}` : '';
+    const newBlog = new Blog({ title, content, author, summary, image });
+    await newBlog.save();
+    res.status(201).json({ message: 'Blog post created successfully', blog: newBlog });
+  } catch (error) {
+    res.status(500).json({ message: 'Failed to create blog post', error: error.message });
   }
 });
 
