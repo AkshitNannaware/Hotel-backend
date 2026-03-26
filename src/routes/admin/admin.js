@@ -673,5 +673,50 @@ router.post('/blogs', uploadBlogImage.single('image'), async (req, res) => {
   }
 });
 
+// Update a blog post (admin only)
+router.put('/blogs/:id', uploadBlogImage.single('image'), async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { title, content, author, summary } = req.body;
+    
+    const blog = await Blog.findById(id);
+    if (!blog) {
+      return res.status(404).json({ message: 'Blog post not found' });
+    }
+
+    // Update fields
+    if (title) blog.title = title;
+    if (content) blog.content = content;
+    if (author) blog.author = author;
+    if (summary) blog.summary = summary;
+    
+    // Update image if new one is provided
+    if (req.file) {
+      blog.image = `/uploads/blogs/${req.file.filename}`;
+    }
+
+    await blog.save();
+    res.json({ message: 'Blog post updated successfully', blog });
+  } catch (error) {
+    res.status(500).json({ message: 'Failed to update blog post', error: error.message });
+  }
+});
+
+// Delete a blog post (admin only)
+router.delete('/blogs/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    const blog = await Blog.findByIdAndDelete(id);
+    if (!blog) {
+      return res.status(404).json({ message: 'Blog post not found' });
+    }
+
+    res.json({ message: 'Blog post deleted successfully' });
+  } catch (error) {
+    res.status(500).json({ message: 'Failed to delete blog post', error: error.message });
+  }
+});
+
 module.exports = router;
 
